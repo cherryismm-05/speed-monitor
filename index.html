@@ -14,21 +14,22 @@
     --line: #dbe2df;
     --charge: #0f8a5f;
     --net: #2457d6;
-    --up: #7a3fd0;
+    --up: #c2570c;
     --warn: #b36b00;
     --track: #e4eae7;
+    --good: #12805a; --bad: #c2382d; --on-net: #ffffff;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #0f1613; --surface: #17211d; --fg: #e9f0ed; --muted: #93a39c; --line: #26332d;
-      --charge: #3ddc97; --net: #6d9bff; --up: #b58cff; --warn: #f0b24a; --track: #22302a;
+      --charge: #3ddc97; --net: #5b8cff; --up: #e06a1f; --warn: #f0b24a; --track: #22302a; --good: #3ddc97; --bad: #ff7a6e; --on-net: #07122e;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #0f1613; --surface: #17211d; --fg: #e9f0ed; --muted: #93a39c; --line: #26332d;
-    --charge: #3ddc97; --net: #6d9bff; --up: #b58cff; --warn: #f0b24a; --track: #22302a;
+    --charge: #3ddc97; --net: #5b8cff; --up: #e06a1f; --warn: #f0b24a; --track: #22302a; --good: #3ddc97; --bad: #ff7a6e; --on-net: #07122e;
     color-scheme: dark;
   }
 
@@ -98,14 +99,14 @@
   }
   button {
     border: 0; border-radius: 10px; padding: 12px 16px; font-weight: 650; cursor: pointer;
-    background: var(--net); color: #fff;
+    background: var(--net); color: var(--on-net);
   }
   button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--line); }
   button:disabled { opacity: 0.55; cursor: default; }
   button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--net); outline-offset: 2px; }
   .stack { display: grid; gap: 12px; }
   select { text-overflow: ellipsis; }
-  input[type="number"], select {
+  input[type="number"], input[type="text"], select {
     width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
     font-variant-numeric: tabular-nums;
   }
@@ -123,6 +124,55 @@
   .info { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 14px; }
   .info h3 { margin: 0 0 2px; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
   .linkbtn { background: transparent; color: var(--net); padding: 0 0 0 8px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; }
+
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button { background: transparent; color: var(--muted); padding: 6px 12px; border-radius: 0; font-size: 0.8rem; }
+  .seg button.on { background: var(--net); color: var(--on-net); }
+
+  .chart-wrap { margin: 0; display: grid; gap: 8px; position: relative; }
+  .chart-wrap figcaption { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 0.82rem; color: var(--muted); }
+  .lg { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .sw-dl { background: var(--net); }
+  .sw-ul { background: var(--up); }
+  .chart { width: 100%; height: auto; display: block; touch-action: pan-y; }
+  .gl { stroke: var(--line); stroke-width: 1; fill: none; }
+  .gl.dash { stroke-dasharray: 3 3; }
+  .tx { fill: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+  .ln-dl, .ln-ul { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .ln-dl { stroke: var(--net); }
+  .ln-ul { stroke: var(--up); }
+  .ar-dl { fill: var(--net); fill-opacity: 0.12; stroke: none; }
+  .ar-ul { fill: var(--up); fill-opacity: 0.12; stroke: none; }
+  .dot-dl { fill: var(--net); stroke: var(--surface); stroke-width: 2; }
+  .dot-ul { fill: var(--up); stroke: var(--surface); stroke-width: 2; }
+  .cross { stroke: var(--muted); stroke-width: 1; fill: none; }
+  .tip { position: absolute; top: 24px; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 4px 8px; font-size: 0.78rem; white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums; }
+  .tblwrap { overflow-x: auto; max-height: 220px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; }
+
+  .verdict { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .verdict h3 { margin: 0; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .vlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .vlist li { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 0.95rem; }
+  .pill { font-size: 0.78rem; font-weight: 700; padding: 2px 10px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+  .pill.good { color: var(--good); }
+  .pill.ok { color: var(--warn); }
+  .pill.bad { color: var(--bad); }
+
+  #hist-card h2 { color: var(--muted); }
+  .hist { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .hist li { display: grid; gap: 2px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+  .hline { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-variant-numeric: tabular-nums; font-size: 0.92rem; }
+  .hline .ht { color: var(--muted); }
+  .hline .dlv { color: var(--net); font-weight: 650; }
+  .hline .ulv { color: var(--up); font-weight: 650; }
+  .hsub { color: var(--muted); font-size: 0.78rem; overflow-wrap: anywhere; }
   @media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
 </style>
 </head>
@@ -171,7 +221,14 @@
   </section>
 
   <section id="net-card" aria-labelledby="net-h">
-    <h2 id="net-h">인터넷 속도</h2>
+    <div class="head">
+      <h2 id="net-h">인터넷 속도</h2>
+      <div class="seg" role="group" aria-label="속도 단위">
+        <button type="button" id="u-mbps" class="on" aria-pressed="true">Mbps</button>
+        <button type="button" id="u-mbs" aria-pressed="false">MB/s</button>
+      </div>
+    </div>
+
     <div class="metrics">
       <div class="metric">
         <span class="label">다운로드</span>
@@ -187,6 +244,41 @@
     <div class="row"><span>지연시간</span><b id="ping">--</b></div>
     <div class="row"><span>지터(흔들림)</span><b id="jitter">--</b></div>
 
+    <p class="status" id="net-status" aria-live="polite">대기</p>
+    <button id="run" type="button">속도 측정 시작</button>
+
+    <figure id="chart-wrap" class="chart-wrap" hidden>
+      <figcaption>
+        <span>측정 중 속도 변화 (단위 <span id="chart-unit">Mbps</span>)</span>
+        <span class="lg"><i class="sw sw-dl"></i>다운로드</span>
+        <span class="lg"><i class="sw sw-ul"></i>업로드</span>
+      </figcaption>
+      <svg id="chart" class="chart" viewBox="0 0 320 140" role="img" aria-label="측정 중 다운로드와 업로드 속도 변화 그래프"></svg>
+      <div id="tip" class="tip" hidden></div>
+      <details>
+        <summary>표로 보기</summary>
+        <div class="tblwrap">
+          <table>
+            <thead><tr><th>시간</th><th id="th-dl">다운로드</th><th id="th-ul">업로드</th></tr></thead>
+            <tbody id="tbl-body"></tbody>
+          </table>
+        </div>
+      </details>
+    </figure>
+
+    <div id="verdict" class="verdict" hidden>
+      <h3>이 속도로 할 수 있는 일</h3>
+      <p class="status" id="v-sum"></p>
+      <ul id="v-list" class="vlist"></ul>
+      <p class="note">서비스별 권장 속도를 단순화한 기준이에요. 지연시간은 측정 서버 기준이라 실제 게임 서버와는 달라요.</p>
+    </div>
+
+    <div id="share" class="stack" hidden>
+      <button id="copy" type="button" class="secondary">결과 복사</button>
+      <input id="copy-field" type="text" readonly hidden aria-label="복사할 결과">
+      <p class="note" id="copy-msg" aria-live="polite"></p>
+    </div>
+
     <div class="info" aria-labelledby="info-h">
       <h3 id="info-h">접속 정보</h3>
       <div class="row"><span>인터넷 회사(ISP)</span><b id="i-isp">확인 중…</b></div>
@@ -198,7 +290,6 @@
       <p class="note">위치는 IP 주소 기준이라 실제 위치와 수~수십 km 다를 수 있어요. 측정 서버는 Cloudflare가 가까운 곳으로 자동 지정해요.</p>
     </div>
 
-    <p class="status" id="net-status" aria-live="polite">대기</p>
     <div class="stack">
       <label for="srv">측정 서버
         <select id="srv"><option value="cf">Cloudflare (자동 · 가까운 서버)</option></select>
@@ -213,8 +304,14 @@
         </select>
       </label>
     </div>
-    <button id="run" type="button">속도 측정 시작</button>
     <p class="note" id="net-note"></p>
+  </section>
+
+  <section id="hist-card" aria-labelledby="hist-h">
+    <h2 id="hist-h">측정 기록</h2>
+    <p class="note" id="hist-sum"></p>
+    <ul id="hist-list" class="hist"></ul>
+    <button id="hist-clear" type="button" class="secondary">기록 지우기</button>
   </section>
 </main>
 
@@ -368,7 +465,7 @@
   var COLO = { ICN: '인천(서울)', GMP: '서울', PUS: '부산', NRT: '도쿄', HND: '도쿄', KIX: '오사카', HKG: '홍콩',
     SIN: '싱가포르', TPE: '타이베이', LAX: '로스앤젤레스', SFO: '샌프란시스코', SEA: '시애틀', FRA: '프랑크푸르트',
     LHR: '런던', AMS: '암스테르담', SYD: '시드니' };
-  var ipFull = '', ipShown = false;
+  var ipFull = '', ipShown = false, curColo = '', curIsp = '';
 
   function maskIp(ip) {
     if (!ip) return '--';
@@ -408,6 +505,7 @@
     var colo = m.colo && typeof m.colo === 'object' ? (m.colo.iata || '') : (m.colo || trace.colo || '');
     var ip = m.clientIp || trace.ip || '';
     var country = m.country || trace.loc || '';
+    curColo = colo; curIsp = m.asOrganization || '';
 
     // 인터넷 회사
     $('i-isp').textContent = m.asOrganization ? m.asOrganization + (m.asn ? ' (AS' + m.asn + ')' : '') : '확인 실패';
@@ -446,11 +544,190 @@
     }
   }
 
-  /* ---------- 인터넷 속도 ---------- */
+  /* ---------- 속도 표시 (단위 전환) ---------- */
+  var unit = load('unit', 'mbps') === 'mbs' ? 'mbs' : 'mbps';
+  var last = { dl: 0, ul: 0 };
+  var lastRun = null;
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function conv(m) { return unit === 'mbs' ? m / 8 : m; }
+  function unitLabel() { return unit === 'mbs' ? 'MB/s' : 'Mbps'; }
+  function fmtNum(v) { return v < 100 ? v.toFixed(1) : Math.round(v).toString(); }
+  function fmtSpeed(m) { return m > 0 ? fmtNum(conv(m)) + ' ' + unitLabel() : '--'; }
   function barW(mbps) { return Math.min(100, Math.log10(mbps + 1) / 3 * 100) + '%'; } // 0~1000Mbps 로그 눈금
-  function setDl(v) { $('dl-val').innerHTML = v.toFixed(v < 100 ? 1 : 0) + '<small>Mbps</small>'; $('dl-bar-i').style.width = barW(v); }
-  function setUl(v) { $('ul-val').innerHTML = v.toFixed(v < 100 ? 1 : 0) + '<small>Mbps</small>'; $('ul-bar-i').style.width = barW(v); }
-  function status(s) { $('net-status').textContent = s; }
+  function show(el, m) { el.innerHTML = (m > 0 ? fmtNum(conv(m)) : '--') + '<small>' + unitLabel() + '</small>'; }
+  function setDl(v) { last.dl = v; show($('dl-val'), v); $('dl-bar-i').style.width = v > 0 ? barW(v) : '0%'; }
+  function setUl(v) { last.ul = v; show($('ul-val'), v); $('ul-bar-i').style.width = v > 0 ? barW(v) : '0%'; }
+  function status(t) { $('net-status').textContent = t; }
+
+  function applyUnit(u) {
+    unit = u; save('unit', u);
+    $('u-mbps').classList.toggle('on', u === 'mbps'); $('u-mbps').setAttribute('aria-pressed', u === 'mbps');
+    $('u-mbs').classList.toggle('on', u === 'mbs'); $('u-mbs').setAttribute('aria-pressed', u === 'mbs');
+    $('chart-unit').textContent = unitLabel();
+    setDl(last.dl); setUl(last.ul);
+    drawChart(); renderTable(); renderHist();
+  }
+  $('u-mbps').addEventListener('click', function () { applyUnit('mbps'); });
+  $('u-mbs').addEventListener('click', function () { applyUnit('mbs'); });
+
+  /* ---------- 측정 중 속도 그래프 ---------- */
+  var series = { dl: [], ul: [] }, chartMax = 0, chartTotal = 13, chartDs = 8, hover = null;
+  var CW = 320, CH = 140, CL = 40, CR = 10, CT = 10, CB = 24, PW = CW - CL - CR, PH = CH - CT - CB;
+  function cx(t) { return CL + PW * Math.min(t, chartTotal) / chartTotal; }
+  function cy(m, max) { return CT + PH * (1 - Math.min(conv(m), max) / max); }
+  function tick(v) { return String(parseFloat(v.toFixed(1))); }
+  function niceMax(v) {
+    var steps = [5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000];
+    for (var i = 0; i < steps.length; i++) if (steps[i] >= v * 1.1) return steps[i];
+    return Math.ceil(v * 1.1);
+  }
+
+  function drawChart() {
+    var max = niceMax(conv(chartMax || 1)), h = '', base = (CT + PH).toFixed(1);
+    [0, 0.5, 1].forEach(function (f) {
+      var y = (CT + PH * (1 - f)).toFixed(1);
+      h += '<line class="gl" x1="' + CL + '" x2="' + (CW - CR) + '" y1="' + y + '" y2="' + y + '"/>';
+      h += '<text class="tx" x="' + (CL - 6) + '" y="' + (+y + 3.5).toFixed(1) + '" text-anchor="end">' + tick(max * f) + '</text>';
+    });
+    h += '<line class="gl dash" x1="' + cx(chartDs).toFixed(1) + '" x2="' + cx(chartDs).toFixed(1) + '" y1="' + CT + '" y2="' + base + '"/>';
+    h += '<text class="tx" x="' + CL + '" y="' + (CH - 6) + '">0초</text>';
+    h += '<text class="tx" x="' + cx(chartDs).toFixed(1) + '" y="' + (CH - 6) + '" text-anchor="middle">' + chartDs + '초</text>';
+    h += '<text class="tx" x="' + (CW - CR) + '" y="' + (CH - 6) + '" text-anchor="end">' + chartTotal + '초</text>';
+
+    ['dl', 'ul'].forEach(function (k) {
+      var p = series[k];
+      if (p.length < 2) return;
+      var pts = p.map(function (q) { return cx(q[0]).toFixed(1) + ',' + cy(q[1], max).toFixed(1); }).join(' ');
+      h += '<polygon class="ar-' + k + '" points="' + cx(p[0][0]).toFixed(1) + ',' + base + ' ' + pts + ' ' + cx(p[p.length - 1][0]).toFixed(1) + ',' + base + '"/>';
+      h += '<polyline class="ln-' + k + '" points="' + pts + '"/>';
+      var e = p[p.length - 1];
+      h += '<circle class="dot-' + k + '" cx="' + cx(e[0]).toFixed(1) + '" cy="' + cy(e[1], max).toFixed(1) + '" r="3.5"/>';
+    });
+    if (hover) {
+      h += '<line class="cross" x1="' + cx(hover.t).toFixed(1) + '" x2="' + cx(hover.t).toFixed(1) + '" y1="' + CT + '" y2="' + base + '"/>';
+      h += '<circle class="dot-' + hover.k + '" cx="' + cx(hover.t).toFixed(1) + '" cy="' + cy(hover.v, max).toFixed(1) + '" r="4.5"/>';
+    }
+    $('chart').innerHTML = h;
+  }
+
+  var svgEl = $('chart'), tipEl = $('tip');
+  function clearHover() { hover = null; tipEl.hidden = true; drawChart(); }
+  svgEl.addEventListener('pointermove', function (e) {
+    var r = svgEl.getBoundingClientRect();
+    if (!r.width) return;
+    var t = ((e.clientX - r.left) / r.width * CW - CL) / PW * chartTotal, best = null, bd = 1e9;
+    ['dl', 'ul'].forEach(function (k) {
+      series[k].forEach(function (q) { var d = Math.abs(q[0] - t); if (d < bd) { bd = d; best = { k: k, t: q[0], v: q[1] }; } });
+    });
+    if (!best || bd > chartTotal * 0.08) { clearHover(); return; }
+    hover = best; drawChart();
+    var sec = best.k === 'dl' ? best.t : best.t - chartDs;
+    tipEl.textContent = (best.k === 'dl' ? '다운로드 ' : '업로드 ') + fmtSpeed(best.v) + ' · ' + sec.toFixed(1) + '초';
+    tipEl.style.left = Math.min(Math.max(cx(best.t) / CW * 100, 20), 80) + '%';
+    tipEl.hidden = false;
+  });
+  svgEl.addEventListener('pointerleave', clearHover);
+
+  // 순간 속도: 최근 약 1초 동안 받은 양으로 계산
+  function makeSampler(arr, offset) {
+    var win = [], lastRec = -1;
+    return function (el, bytes) {
+      win.push([el, bytes]);
+      while (win.length > 2 && el - win[0][0] > 1.2) win.shift();
+      if (el - lastRec < 0.2) return;
+      var a = win[0], dt = el - a[0];
+      if (dt < 0.2) return;
+      lastRec = el;
+      var v = (bytes - a[1]) * 8 / dt / 1e6;
+      arr.push([offset + el, v]);
+      if (v > chartMax) chartMax = v;
+      drawChart();
+    };
+  }
+
+  function renderTable() {
+    $('th-dl').textContent = '다운로드 (' + unitLabel() + ')';
+    $('th-ul').textContent = '업로드 (' + unitLabel() + ')';
+    function near(p, t) { var b = null, bd = 1e9; p.forEach(function (q) { var d = Math.abs(q[0] - t); if (d < bd) { bd = d; b = q; } }); return bd <= 0.6 ? b : null; }
+    var rows = '', n = Math.ceil(chartTotal);
+    for (var t = 1; t <= n; t++) {
+      var d = near(series.dl, t), u = near(series.ul, t);
+      if (!d && !u) continue;
+      rows += '<tr><td>' + t + '초</td><td>' + (d ? fmtNum(conv(d[1])) : '') + '</td><td>' + (u ? fmtNum(conv(u[1])) : '') + '</td></tr>';
+    }
+    $('tbl-body').innerHTML = rows;
+  }
+
+  /* ---------- 이 속도로 할 수 있는 일 ---------- */
+  function renderVerdict(r) {
+    var items = [
+      ['웹 서핑 · 메신저', r.dl >= 5 ? 2 : r.dl >= 1 ? 1 : 0],
+      ['영상 시청 (1080p)', r.dl >= 15 ? 2 : r.dl >= 5 ? 1 : 0],
+      ['영상 시청 (4K)', r.dl >= 40 ? 2 : r.dl >= 25 ? 1 : 0],
+      ['화상회의', (r.dl >= 10 && r.ul >= 5 && r.ping < 100 && r.jitter < 30) ? 2 : (r.dl >= 3 && r.ul >= 2 && r.ping < 200) ? 1 : 0],
+      ['온라인 게임', (r.ping < 40 && r.jitter < 15 && r.dl >= 10) ? 2 : (r.ping < 80 && r.jitter < 30 && r.dl >= 3) ? 1 : 0],
+      ['라이브 방송 · 대용량 업로드', r.ul >= 20 ? 2 : r.ul >= 8 ? 1 : 0]
+    ];
+    var label = ['부족', '보통', '좋음'], cls = ['bad', 'ok', 'good'];
+    $('v-list').innerHTML = items.map(function (it) {
+      return '<li><span>' + it[0] + '</span><span class="pill ' + cls[it[1]] + '">' + label[it[1]] + '</span></li>';
+    }).join('');
+    var bad = items.filter(function (it) { return it[1] === 0; }).map(function (it) { return it[0]; });
+    var good = items.filter(function (it) { return it[1] === 2; }).length;
+    $('v-sum').textContent = bad.length === 0
+      ? (good >= 5 ? '거의 모든 용도에 여유 있어요.' : '일상적인 용도는 문제없어요.')
+      : '부족한 용도: ' + bad.join(', ');
+    $('verdict').hidden = false;
+  }
+
+  /* ---------- 결과 복사 ---------- */
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function fmtTime(ts) { var d = new Date(ts); return pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function shareText(r) {
+    return '속도 모니터 ' + fmtTime(r.t) + ' · ' + (r.isp || 'ISP 미확인') + ' · 다운로드 ' + fmtSpeed(r.dl) +
+           ' · 업로드 ' + fmtSpeed(r.ul) + ' · 지연 ' + Math.round(r.ping) + 'ms · 서버 ' + r.server;
+  }
+  $('copy').addEventListener('click', async function () {
+    if (!lastRun) return;
+    var txt = shareText(lastRun), msg = $('copy-msg');
+    try { await navigator.clipboard.writeText(txt); msg.textContent = '복사했어요. (IP 주소는 포함되지 않아요)'; }
+    catch (e) {
+      var f = $('copy-field'); f.hidden = false; f.value = txt; f.focus(); f.select();
+      msg.textContent = '복사가 막혀 있어요. 선택된 글을 직접 복사하세요.';
+    }
+  });
+
+  /* ---------- 측정 기록 (이 기기에만 저장) ---------- */
+  var hist = [];
+  try { hist = JSON.parse(load('hist', '[]')); } catch (e) { hist = []; }
+  if (!Array.isArray(hist)) hist = [];
+  function saveHist() { save('hist', JSON.stringify(hist.slice(-30))); }
+  function renderHist() {
+    var n = hist.length;
+    $('hist-clear').hidden = n === 0;
+    if (!n) {
+      $('hist-sum').textContent = '아직 측정 기록이 없어요. 속도를 측정하면 이 기기에 최근 30회까지 저장돼요.';
+      $('hist-list').innerHTML = '';
+      return;
+    }
+    var recent = hist.slice(-10), sd = 0, su = 0, best = 0;
+    recent.forEach(function (h) { sd += h.dl; su += h.ul; });
+    hist.forEach(function (h) { if (h.dl > best) best = h.dl; });
+    $('hist-sum').textContent = '최근 ' + recent.length + '회 평균 다운로드 ' + fmtSpeed(sd / recent.length) + ', 업로드 ' + fmtSpeed(su / recent.length) + ' · 최고 다운로드 ' + fmtSpeed(best);
+    $('hist-list').innerHTML = hist.slice(-8).reverse().map(function (h) {
+      return '<li><div class="hline"><span class="ht">' + esc(fmtTime(h.t)) + '</span>' +
+             '<span class="dlv">↓ ' + esc(fmtSpeed(h.dl)) + '</span><span class="ulv">↑ ' + esc(fmtSpeed(h.ul)) + '</span>' +
+             '<span>' + Math.round(h.ping) + ' ms</span></div>' +
+             '<div class="hsub">' + esc([h.isp, h.srv].filter(Boolean).join(' · ')) + '</div></li>';
+    }).join('');
+  }
+  var clearArmed = false, clearTimer = null;
+  $('hist-clear').addEventListener('click', function () {
+    var b = this;
+    function reset() { clearArmed = false; b.textContent = '기록 지우기'; clearTimeout(clearTimer); }
+    if (!clearArmed) { clearArmed = true; b.textContent = '한 번 더 누르면 삭제돼요'; clearTimer = setTimeout(reset, 4000); return; }
+    hist = []; saveHist(); renderHist(); reset();
+  });
 
   /* ---------- 측정 서버 / 측정 시간 ---------- */
   var CF = { name: 'Cloudflare (자동)', cf: true,
@@ -530,7 +807,7 @@
 
   // 정해진 시간 동안 계속 받아서 평균 속도를 계산 (빠른 회선도 시간을 채움)
   async function measureDownload(t, limit) {
-    var ctrl = new AbortController();
+    var ctrl = new AbortController(), rec = makeSampler(series.dl, 0);
     var bytes = 0, t0 = 0, mbps = 0;
     try {
       outer: for (;;) {
@@ -544,6 +821,7 @@
           if (!t0) { t0 = now; continue; }      // 첫 조각 도착 이후부터 계산
           bytes += r.value.length;
           var el = (now - t0) / 1000;
+          rec(el, bytes);
           if (el > 0.4) { mbps = bytes * 8 / el / 1e6; setDl(mbps); }
           if (el > limit) { ctrl.abort(); break outer; }
         }
@@ -556,7 +834,7 @@
 
   function measureUpload(t, limit) {
     return new Promise(function (resolve, reject) {
-      var body = new Blob([new Uint8Array(20000000)]);
+      var body = new Blob([new Uint8Array(20000000)]), rec = makeSampler(series.ul, chartDs);
       var t0 = performance.now(), done = 0, mbps = 0, finished = false;
       function finish() { if (!finished) { finished = true; resolve(mbps); } }
       function send() {
@@ -564,12 +842,15 @@
         xhr.open('POST', t.up + Math.random());
         xhr.upload.onprogress = function (e) {
           var el = (performance.now() - t0) / 1000;
+          rec(el, done + e.loaded);
           if (el > 0.5) { mbps = (done + e.loaded) * 8 / el / 1e6; setUl(mbps); }
           if (el > limit) xhr.abort();
         };
         xhr.onload = function () {
           done += body.size;
-          if ((performance.now() - t0) / 1000 >= limit) finish(); else send();
+          var el = (performance.now() - t0) / 1000;
+          if (el > 0.3) { rec(el, done); mbps = done * 8 / el / 1e6; setUl(mbps); }   // 진행 이벤트가 없어도 계산
+          if (el >= limit) finish(); else send();
         };
         xhr.onabort = finish;
         xhr.onerror = function () { mbps ? finish() : reject(new Error('upload failed')); };
@@ -580,25 +861,36 @@
   }
 
   $('run').addEventListener('click', async function () {
-    var btn = $('run'), t = target(), ds = secs(), us = upSecs();
+    var btn = $('run'), t = target(), ds = secs(), us = upSecs(), p = null;
     btn.disabled = true; srvEl.disabled = true; durEl.disabled = true;
     btn.textContent = '측정 중…';
     $('ping').textContent = '--'; $('jitter').textContent = '--';
-    setDl(0); setUl(0);
-    $('dl-val').innerHTML = '--<small>Mbps</small>'; $('ul-val').innerHTML = '--<small>Mbps</small>';
+    $('verdict').hidden = true; $('share').hidden = true; $('copy-field').hidden = true; $('copy-msg').textContent = '';
+    series.dl = []; series.ul = []; chartMax = 0; chartDs = ds; chartTotal = ds + us; hover = null; tipEl.hidden = true;
+    $('chart-wrap').hidden = false;
+    setDl(0); setUl(0); drawChart(); renderTable();
     try {
       status('접속 정보 확인 중…');
       await loadInfo();
       if (!t.cf) { $('i-server').textContent = t.name + ' (LibreSpeed)'; $('i-dist').textContent = '--'; }
       status('지연시간 측정 중…');
-      var p = await measurePing(t);
+      p = await measurePing(t);
       $('ping').textContent = Math.round(p.ping) + ' ms';
       $('jitter').textContent = p.jitter.toFixed(1) + ' ms';
       status('다운로드 측정 중… (' + ds + '초)');
-      setDl(await measureDownload(t, ds));
+      var d = await measureDownload(t, ds); setDl(d);
       status('업로드 측정 중… (' + us + '초)');
-      setUl(await measureUpload(t, us));
+      var u = await measureUpload(t, us); setUl(u);
+      renderTable();
       status('측정 완료 · ' + t.name);
+      if (d > 0) {
+        var srvName = t.cf ? 'Cloudflare' + (curColo ? ' ' + curColo : '') : t.name;
+        lastRun = { t: Date.now(), dl: d, ul: u, ping: p.ping, jitter: p.jitter, isp: curIsp, server: srvName };
+        renderVerdict(lastRun);
+        $('share').hidden = false;
+        hist.push({ t: lastRun.t, dl: d, ul: u, ping: p.ping, jit: p.jitter, srv: srvName, isp: curIsp });
+        saveHist(); renderHist();
+      }
     } catch (e) {
       status(t.cf ? '측정 실패: 인터넷 연결을 확인하고, 파일을 브라우저(Safari/Chrome)에서 직접 열어 다시 시도하세요.'
                   : '측정 실패: 선택한 서버에 연결할 수 없어요. 다른 서버를 고르거나 Cloudflare 자동으로 바꿔 보세요.');
@@ -607,7 +899,8 @@
     btn.textContent = '다시 측정';
   });
 
-  loadInfo();   // 페이지를 열면 바로 접속 정보 표시
+  applyUnit(unit);   // 저장된 단위로 표시, 기록도 그림
+  loadInfo();        // 페이지를 열면 바로 접속 정보 표시
   loadServers();
   renderNote();
 })();
