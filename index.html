@@ -102,8 +102,10 @@
   }
   button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--line); }
   button:disabled { opacity: 0.55; cursor: default; }
-  button:focus-visible, input:focus-visible { outline: 3px solid var(--net); outline-offset: 2px; }
-  input[type="number"] {
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--net); outline-offset: 2px; }
+  .stack { display: grid; gap: 12px; }
+  select { text-overflow: ellipsis; }
+  input[type="number"], select {
     width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
     font-variant-numeric: tabular-nums;
   }
@@ -197,8 +199,22 @@
     </div>
 
     <p class="status" id="net-status" aria-live="polite">대기</p>
+    <div class="stack">
+      <label for="srv">측정 서버
+        <select id="srv"><option value="cf">Cloudflare (자동 · 가까운 서버)</option></select>
+      </label>
+      <p class="note" id="srv-note">다른 지역 서버 목록을 불러오는 중…</p>
+      <label for="dur">측정 시간
+        <select id="dur">
+          <option value="5">짧게 (5초)</option>
+          <option value="8">보통 (8초)</option>
+          <option value="15">길게 (15초)</option>
+          <option value="30">매우 길게 (30초)</option>
+        </select>
+      </label>
+    </div>
     <button id="run" type="button">속도 측정 시작</button>
-    <p class="note">Cloudflare 서버로 다운로드 최대 8초, 업로드 최대 6초 측정해요. 모바일 데이터로 하면 수십 MB가 사용돼요.</p>
+    <p class="note" id="net-note"></p>
   </section>
 </main>
 
@@ -436,78 +452,164 @@
   function setUl(v) { $('ul-val').innerHTML = v.toFixed(v < 100 ? 1 : 0) + '<small>Mbps</small>'; $('ul-bar-i').style.width = barW(v); }
   function status(s) { $('net-status').textContent = s; }
 
-  async function measurePing() {
-    var t = [];
-    for (var i = 0; i < 7; i++) {
-      var t0 = performance.now();
-      await fetch(BASE + '/cdn-cgi/trace?r=' + Math.random(), { cache: 'no-store' });
-      if (i > 0) t.push(performance.now() - t0);   // 첫 요청은 연결 수립 비용이라 제외
-    }
-    var min = Math.min.apply(null, t), jit = 0;
-    for (var j = 1; j < t.length; j++) jit += Math.abs(t[j] - t[j - 1]);
-    return { ping: min, jitter: jit / (t.length - 1) };
+  /* ---------- 측정 서버 / 측정 시간 ---------- */
+  var CF = { name: 'Cloudflare (자동)', cf: true,
+    ping: BASE + '/cdn-cgi/trace?r=', down: BASE + '/__down?bytes=100000000&r=', up: BASE + '/__up?r=' };
+  var servers = [];
+  var srvEl = $('srv'), durEl = $('dur');
+
+  durEl.value = load('dur', '8');
+  if (!durEl.value) durEl.value = '8';
+  function secs() { return parseInt(durEl.value, 10) || 8; }
+  function upSecs() { return Math.max(3, Math.round(secs() * 0.75)); }
+
+  function withQuery(url) { return url + (url.indexOf('?') > -1 ? '&r=' : '?r='); }
+
+  function target() {
+    var v = srvEl.value;
+    if (v === 'cf') return CF;
+    var s = servers[parseInt(v.slice(3), 10)];
+    if (!s) return CF;
+    var base = s.server.indexOf('//') === 0 ? 'https:' + s.server : s.server;
+    if (base.slice(-1) !== '/') base += '/';
+    var dl = s.dlURL || 'backend/garbage.php';
+    dl += (dl.indexOf('?') > -1 ? '&' : '?') + 'ckSize=50';
+    return {
+      name: s.name, cf: false,
+      ping: withQuery(base + (s.pingURL || 'backend/empty.php')),
+      down: withQuery(base + dl),
+      up: withQuery(base + (s.ulURL || 'backend/empty.php'))
+    };
   }
 
-  async function measureDownload() {
+  function renderNote() {
+    var t = target();
+    var txt = '다운로드 ' + secs() + '초, 업로드 ' + upSecs() + '초 동안 측정해요. ';
+    txt += secs() >= 15 ? '빠른 회선에서는 데이터가 수백 MB~수 GB 쓰일 수 있어요. 모바일 데이터는 주의하세요. '
+                        : '모바일 데이터로 하면 수십~수백 MB가 사용돼요. ';
+    if (!t.cf) txt += '멀리 있는 서버는 지연이 커서 속도가 낮게 나오는 게 정상이에요.';
+    $('net-note').textContent = txt;
+  }
+  durEl.addEventListener('change', function () { save('dur', durEl.value); renderNote(); });
+  srvEl.addEventListener('change', renderNote);
+
+  async function loadServers() {
+    try {
+      var r = await fetch('https://librespeed.org/backend-servers/servers_list.json', { cache: 'no-store' });
+      var list = await r.json();
+      servers = list.filter(function (s) { return s && s.server && s.name && s.server.indexOf('http://') !== 0; });
+      servers.sort(function (a, b) { return a.name.localeCompare(b.name); });
+      var asia = /korea|japan|tokyo|seoul|singapore|hong kong|taiwan|india|china|asia|vietnam|thailand|indonesia|malaysia|philippines/i;
+      var g1 = document.createElement('optgroup'); g1.label = '아시아';
+      var g2 = document.createElement('optgroup'); g2.label = '그 외 지역';
+      servers.forEach(function (s, i) {
+        var o = document.createElement('option');
+        o.value = 'ls:' + i; o.textContent = s.name;
+        (asia.test(s.name) ? g1 : g2).appendChild(o);
+      });
+      if (g1.children.length) srvEl.appendChild(g1);
+      if (g2.children.length) srvEl.appendChild(g2);
+      $('srv-note').textContent = 'Cloudflare는 가까운 서버로 자동 연결돼서 위치를 고를 수 없어요. 다른 지역은 공개 LibreSpeed 서버 ' + servers.length + '곳 중에서 고를 수 있어요. 서버 운영 상태에 따라 실패할 수 있어요.';
+    } catch (e) {
+      $('srv-note').textContent = '다른 지역 서버 목록을 불러오지 못했어요. Cloudflare 자동 서버만 쓸 수 있어요.';
+    }
+  }
+
+  /* ---------- 측정 ---------- */
+  async function measurePing(t) {
+    var arr = [];
+    for (var i = 0; i < 7; i++) {
+      var t0 = performance.now();
+      await fetch(t.ping + Math.random(), { cache: 'no-store' });
+      if (i > 0) arr.push(performance.now() - t0);   // 첫 요청은 연결 수립 비용이라 제외
+    }
+    var min = Math.min.apply(null, arr), jit = 0;
+    for (var j = 1; j < arr.length; j++) jit += Math.abs(arr[j] - arr[j - 1]);
+    return { ping: min, jitter: jit / (arr.length - 1) };
+  }
+
+  // 정해진 시간 동안 계속 받아서 평균 속도를 계산 (빠른 회선도 시간을 채움)
+  async function measureDownload(t, limit) {
     var ctrl = new AbortController();
-    var res = await fetch(BASE + '/__down?bytes=100000000&r=' + Math.random(), { cache: 'no-store', signal: ctrl.signal });
-    var reader = res.body.getReader();
     var bytes = 0, t0 = 0, mbps = 0;
     try {
-      for (;;) {
-        var r = await reader.read();
-        if (r.done) break;
-        var now = performance.now();
-        if (!t0) { t0 = now; continue; }          // 첫 조각 도착 이후부터 계산
-        bytes += r.value.length;
-        var el = (now - t0) / 1000;
-        if (el > 0.4) { mbps = bytes * 8 / el / 1e6; setDl(mbps); }
-        if (el > 8) { ctrl.abort(); break; }
+      outer: for (;;) {
+        var res = await fetch(t.down + Math.random(), { cache: 'no-store', signal: ctrl.signal });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var reader = res.body.getReader();
+        for (;;) {
+          var r = await reader.read();
+          if (r.done) break;
+          var now = performance.now();
+          if (!t0) { t0 = now; continue; }      // 첫 조각 도착 이후부터 계산
+          bytes += r.value.length;
+          var el = (now - t0) / 1000;
+          if (el > 0.4) { mbps = bytes * 8 / el / 1e6; setDl(mbps); }
+          if (el > limit) { ctrl.abort(); break outer; }
+        }
       }
-    } catch (e) { if (e.name !== 'AbortError') throw e; }
+    } catch (e) {
+      if (e.name !== 'AbortError' && !mbps) throw e;
+    }
     return mbps;
   }
 
-  function measureUpload() {
+  function measureUpload(t, limit) {
     return new Promise(function (resolve, reject) {
-      var xhr = new XMLHttpRequest(), t0 = performance.now(), mbps = 0;
-      xhr.open('POST', BASE + '/__up?r=' + Math.random());
-      xhr.upload.onprogress = function (e) {
-        var el = (performance.now() - t0) / 1000;
-        if (el > 0.5) { mbps = e.loaded * 8 / el / 1e6; setUl(mbps); }
-        if (el > 6) xhr.abort();
-      };
-      xhr.onload = xhr.onabort = function () { resolve(mbps); };
-      xhr.onerror = function () { mbps ? resolve(mbps) : reject(new Error('upload failed')); };
-      xhr.send(new Blob([new Uint8Array(30000000)]));
+      var body = new Blob([new Uint8Array(20000000)]);
+      var t0 = performance.now(), done = 0, mbps = 0, finished = false;
+      function finish() { if (!finished) { finished = true; resolve(mbps); } }
+      function send() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', t.up + Math.random());
+        xhr.upload.onprogress = function (e) {
+          var el = (performance.now() - t0) / 1000;
+          if (el > 0.5) { mbps = (done + e.loaded) * 8 / el / 1e6; setUl(mbps); }
+          if (el > limit) xhr.abort();
+        };
+        xhr.onload = function () {
+          done += body.size;
+          if ((performance.now() - t0) / 1000 >= limit) finish(); else send();
+        };
+        xhr.onabort = finish;
+        xhr.onerror = function () { mbps ? finish() : reject(new Error('upload failed')); };
+        xhr.send(body);
+      }
+      send();
     });
   }
 
   $('run').addEventListener('click', async function () {
-    var btn = $('run');
-    btn.disabled = true; btn.textContent = '측정 중…';
+    var btn = $('run'), t = target(), ds = secs(), us = upSecs();
+    btn.disabled = true; srvEl.disabled = true; durEl.disabled = true;
+    btn.textContent = '측정 중…';
     $('ping').textContent = '--'; $('jitter').textContent = '--';
     setDl(0); setUl(0);
     $('dl-val').innerHTML = '--<small>Mbps</small>'; $('ul-val').innerHTML = '--<small>Mbps</small>';
     try {
       status('접속 정보 확인 중…');
       await loadInfo();
+      if (!t.cf) { $('i-server').textContent = t.name + ' (LibreSpeed)'; $('i-dist').textContent = '--'; }
       status('지연시간 측정 중…');
-      var p = await measurePing();
+      var p = await measurePing(t);
       $('ping').textContent = Math.round(p.ping) + ' ms';
       $('jitter').textContent = p.jitter.toFixed(1) + ' ms';
-      status('다운로드 측정 중…');
-      setDl(await measureDownload());
-      status('업로드 측정 중…');
-      setUl(await measureUpload());
-      status('측정 완료');
+      status('다운로드 측정 중… (' + ds + '초)');
+      setDl(await measureDownload(t, ds));
+      status('업로드 측정 중… (' + us + '초)');
+      setUl(await measureUpload(t, us));
+      status('측정 완료 · ' + t.name);
     } catch (e) {
-      status('측정 실패: 인터넷 연결을 확인하거나, 파일을 브라우저(Safari/Chrome)에서 직접 열어 다시 시도하세요.');
+      status(t.cf ? '측정 실패: 인터넷 연결을 확인하고, 파일을 브라우저(Safari/Chrome)에서 직접 열어 다시 시도하세요.'
+                  : '측정 실패: 선택한 서버에 연결할 수 없어요. 다른 서버를 고르거나 Cloudflare 자동으로 바꿔 보세요.');
     }
-    btn.disabled = false; btn.textContent = '다시 측정';
+    btn.disabled = false; srvEl.disabled = false; durEl.disabled = false;
+    btn.textContent = '다시 측정';
   });
 
   loadInfo();   // 페이지를 열면 바로 접속 정보 표시
+  loadServers();
+  renderNote();
 })();
 </script>
 </body>
